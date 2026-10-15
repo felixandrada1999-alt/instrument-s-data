@@ -44,6 +44,7 @@ export default function Home() {
   const [photoPreview, setPhotoPreview] = useState("");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [storageMode, setStorageMode] = useState<"local" | "cloud">("cloud");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -55,6 +56,7 @@ export default function Home() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "No se pudo cargar el inventario.");
       setInstruments(data.instruments);
+      setStorageMode(data.storageMode ?? "cloud");
       setError("");
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Error de conexión.");
@@ -73,6 +75,7 @@ export default function Home() {
         if (!response.ok) throw new Error(data.error || "No se pudo cargar el inventario.");
         if (!cancelled) {
           setInstruments(data.instruments);
+          setStorageMode(data.storageMode ?? "cloud");
           setError("");
         }
       } catch (loadError) {
@@ -117,6 +120,7 @@ export default function Home() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "No se pudo guardar el instrumento.");
       setInstruments((current) => [data.instrument, ...current]);
+      setStorageMode(data.storageMode ?? "cloud");
       setForm(emptyForm);
       setPhoto(null);
       setPhotoPreview("");
@@ -143,7 +147,7 @@ export default function Home() {
           <a className="nav-item" href="#registro"><FilePlus2 size={18} /> Nuevo registro</a>
         </nav>
         <div className="sidebar-bottom">
-          <div className="secure-note"><span><ShieldCheck size={17} /></span><div><strong>Datos protegidos</strong><small>Almacenamiento seguro en la nube</small></div></div>
+          <div className="secure-note"><span><ShieldCheck size={17} /></span><div><strong>{storageMode === "local" ? "Modo local activo" : "Datos protegidos"}</strong><small>{storageMode === "local" ? "Fotos y registros en este equipo" : "Almacenamiento seguro en la nube"}</small></div></div>
           <div className="profile"><span className="profile-avatar">AI</span><div><strong>Andrada Instrumentos</strong><small>Panel de operaciones</small></div><ChevronDown size={16} /></div>
         </div>
       </aside>
@@ -164,7 +168,7 @@ export default function Home() {
 
           <div className="workspace-grid">
             <section className="inventory-panel" id="inventario">
-              <div className="panel-heading"><div><div className="panel-kicker">BASE DE DATOS</div><h2>Inventario registrado <span className="heading-count">{instruments.length}</span></h2></div><button className="filter-button" type="button" aria-label="Opciones de filtro"><SlidersHorizontal size={17} /></button></div>
+              <div className="panel-heading"><div><div className="panel-kicker">{storageMode === "local" ? "ALMACENAMIENTO LOCAL" : "BASE DE DATOS"}</div><h2>Inventario registrado <span className="heading-count">{instruments.length}</span></h2></div><button className="filter-button" type="button" aria-label="Opciones de filtro"><SlidersHorizontal size={17} /></button></div>
               <div className="search-row"><label className="search-box"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar instrumento, parte, serie…" aria-label="Buscar en el inventario" /><kbd>⌘ K</kbd></label><button className="sort-button" type="button" onClick={() => setInstruments((items) => [...items].reverse())}>Más recientes <ChevronDown size={15} /></button></div>
 
               {error && <div className="inline-alert"><CircleAlert size={17} /><span>{error}</span><button type="button" onClick={() => void loadInstruments()}>Reintentar</button></div>}
@@ -183,7 +187,7 @@ export default function Home() {
                   </article>)}
                 </div>
               )}
-              <footer className="list-footer"><span>Mostrando <strong>{filteredInstruments.length}</strong> de <strong>{instruments.length}</strong> registros</span><span className="encrypted"><ShieldCheck size={14} /> Datos sincronizados</span></footer>
+              <footer className="list-footer"><span>Mostrando <strong>{filteredInstruments.length}</strong> de <strong>{instruments.length}</strong> registros</span><span className="encrypted"><ShieldCheck size={14} />{storageMode === "local" ? "Solo en este equipo" : "Datos sincronizados"}</span></footer>
             </section>
 
             <aside className="form-panel" id="registro">

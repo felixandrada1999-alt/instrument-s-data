@@ -9,6 +9,8 @@ Aplicación Next.js lista para desplegar en Vercel. Registra quién carga cada e
 3. Copiá `.env.example` a `.env.local` y completá `DATABASE_URL` y `BLOB_READ_WRITE_TOKEN`.
 4. Ejecutá `npm run dev` y abrí `http://localhost:3000`.
 
+Si las credenciales cloud todavía no están configuradas, el modo de desarrollo guarda registros en `.local-data/` y fotos en `public/uploads/`. Estos datos son locales, no se sincronizan con Vercel y no se usan en producción.
+
 La tabla `instruments` se crea automáticamente al consultar o guardar por primera vez. El SQL equivalente está en `db/schema.sql`.
 
 ## Despliegue en Vercel

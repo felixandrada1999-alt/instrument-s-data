@@ -1,19 +1,24 @@
 import { del, put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { ensureInstrumentTable } from "@/lib/database";
+import { createLocalInstrument, getLocalInstruments, isLocalStorageEnabled } from "@/lib/local-inventory";
 
 const maxPhotoSize = 4 * 1024 * 1024;
 const allowedPhotoTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 export async function GET() {
   try {
+    if (isLocalStorageEnabled()) {
+      return NextResponse.json({ instruments: await getLocalInstruments(), storageMode: "local" });
+    }
+
     const sql = await ensureInstrumentTable();
     const instruments = await sql`
       SELECT id, uploader_name, instrument_name, part_number, serial_number, photo_url, created_at
       FROM instruments
       ORDER BY created_at DESC
     `;
-    return NextResponse.json({ instruments });
+    return NextResponse.json({ instruments, storageMode: "cloud" });
   } catch (error) {
     console.error("Error consultando el inventario:", error);
     return NextResponse.json(
@@ -50,6 +55,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "La fotografía no puede superar los 4 MB." }, { status: 413 });
     }
 
+    if (isLocalStorageEnabled()) {
+      const instrument = await createLocalInstrument({
+        uploaderName,
+        instrumentName,
+        partNumber,
+        serialNumber,
+        photo,
+      });
+      return NextResponse.json({ instrument, storageMode: "local" }, { status: 201 });
+    }
+
     const sql = await ensureInstrumentTable();
     const uploaded = await put(photo.name, photo, {
       access: "public",
@@ -64,7 +80,7 @@ export async function POST(request: Request) {
       RETURNING id, uploader_name, instrument_name, part_number, serial_number, photo_url, created_at
     `;
 
-    return NextResponse.json({ instrument }, { status: 201 });
+    return NextResponse.json({ instrument, storageMode: "cloud" }, { status: 201 });
   } catch (error) {
     if (photoUrl) {
       try {
